@@ -1,10 +1,447 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Website</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Your Stay</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #1f2933;
+      --muted: #616e7c;
+      --border: #d9e2ec;
+      --accent: #1a73e8;
+      --accent-hover: #1558b0;
+      --error: #d93025;
+      --success: #188038;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 16px 8px;
+    }
+    header h1 { margin: 0 0 4px; font-size: 1.75rem; }
+    header p { margin: 0; color: var(--muted); }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: minmax(300px, 400px) 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card h2 { margin: 0 0 16px; font-size: 1.15rem; }
+
+    /* ---------- Form ---------- */
+    .field { margin-bottom: 18px; }
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+    input[type="text"], input[type="tel"], input[type="date"], textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+    }
+    .phone-group {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .phone-group:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+    }
+    .phone-prefix {
+      padding: 10px 12px;
+      background: #f0f4f8;
+      border-right: 1px solid var(--border);
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .phone-group input {
+      border: none;
+      border-radius: 0;
+      box-shadow: none !important;
+    }
+    .date-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .hint { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+    .error-msg {
+      font-size: 0.8rem;
+      color: var(--error);
+      margin-top: 4px;
+      min-height: 1em;
+    }
+    .invalid input, .invalid .phone-group { border-color: var(--error); }
+    .nights {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin: -6px 0 18px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      font: inherit;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: var(--accent-hover); }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    .status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .status.show { display: block; }
+    .status.ok { background: #e6f4ea; color: var(--success); }
+    .status.err { background: #fce8e6; color: var(--error); }
+
+    /* ---------- Calendar ---------- */
+    .calendar-card { padding: 0; overflow: hidden; }
+    .calendar-card h2 { padding: 20px 24px 0; }
+    .calendar-card .hint { padding: 0 24px 12px; margin: 0; }
+    .calendar-frame {
+      width: 100%;
+      height: 640px;
+      border: 0;
+      display: block;
+    }
+
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+      .calendar-frame { height: 480px; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Hello World!</h1>
-    <p>Welcome to my GitHub Pages website.</p>
+  <header>
+    <h1>Book Your Stay</h1>
+    <p>Check availability on the calendar, then fill in your details.</p>
+  </header>
+
+  <main>
+    <!-- ================= LEFT: BOOKING FORM ================= -->
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title">Booking Details</h2>
+
+      <form id="bookingForm" novalidate>
+        <div class="field" id="field-name">
+          <label for="fullName">Full Name</label>
+          <input type="text" id="fullName" name="fullName"
+                 placeholder="Juan Dela Cruz" autocomplete="name" required />
+          <div class="error-msg" id="err-name"></div>
+        </div>
+
+        <div class="field" id="field-phone">
+          <label for="phone">Philippine Mobile Number</label>
+          <div class="phone-group">
+            <span class="phone-prefix">🇵🇭 +63</span>
+            <input type="tel" id="phone" name="phone"
+                   placeholder="917 123 4567" inputmode="numeric"
+                   autocomplete="tel-national" maxlength="13" required />
+          </div>
+          <div class="hint">10-digit mobile number starting with 9 (e.g. 917 123 4567)</div>
+          <div class="error-msg" id="err-phone"></div>
+        </div>
+
+        <div class="date-row">
+          <div class="field" id="field-checkin">
+            <label for="checkIn">Check-in</label>
+            <input type="date" id="checkIn" name="checkIn" required />
+            <div class="error-msg" id="err-checkin"></div>
+          </div>
+          <div class="field" id="field-checkout">
+            <label for="checkOut">Check-out</label>
+            <input type="date" id="checkOut" name="checkOut" required />
+            <div class="error-msg" id="err-checkout"></div>
+          </div>
+        </div>
+        <div class="nights" id="nightsInfo"></div>
+
+        <div class="field">
+          <label for="notes">Notes <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+          <textarea id="notes" name="notes" rows="3" placeholder="Number of guests, special requests…"></textarea>
+        </div>
+
+        <button type="submit" id="submitBtn">Request Booking</button>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <!-- ================= RIGHT: GOOGLE CALENDAR ================= -->
+    <section class="card calendar-card" aria-labelledby="cal-title">
+      <h2 id="cal-title">Availability</h2>
+      <p class="hint">Booked dates appear as events on the calendar.</p>
+      <iframe id="calendarFrame" class="calendar-frame" title="Booking calendar"></iframe>
+    </section>
+  </main>
+
+  <script>
+    // =====================================================================
+    // CONFIGURATION — edit these values
+    // =====================================================================
+    const CONFIG = {
+      // The Gmail address (or calendar ID) whose calendar is shown.
+      // The calendar must be public: Google Calendar → Settings →
+      // [your calendar] → "Access permissions" → "Make available to public".
+      calendarId: "your.email@gmail.com",
+
+      timeZone: "Asia/Manila",
+
+      // OPTIONAL: URL of the deployed Google Apps Script web app
+      // (see booking-apps-script.gs). When set, bookings are written
+      // straight into the calendar. When empty, the visitor is sent to a
+      // pre-filled "Add to Google Calendar" page instead.
+      appsScriptUrl: ""
+    };
+
+    // =====================================================================
+    // Calendar embed
+    // =====================================================================
+    const calendarFrame = document.getElementById("calendarFrame");
+
+    function buildCalendarEmbedUrl(calendarId, timeZone) {
+      const params = new URLSearchParams({
+        src: calendarId,
+        ctz: timeZone,
+        mode: "MONTH",
+        showTitle: "0",
+        showPrint: "0",
+        showCalendars: "0",
+        showTz: "0"
+      });
+      return "https://calendar.google.com/calendar/embed?" + params.toString();
+    }
+
+    function refreshCalendar() {
+      // Cache-bust so the iframe reloads and shows new events.
+      calendarFrame.src = buildCalendarEmbedUrl(CONFIG.calendarId, CONFIG.timeZone) + "&_=" + Date.now();
+    }
+
+    refreshCalendar();
+
+    // =====================================================================
+    // Helpers
+    // =====================================================================
+    function toIsoDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function parseIsoDate(value) {
+      const [y, m, d] = value.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function nightsBetween(checkIn, checkOut) {
+      const ms = parseIsoDate(checkOut) - parseIsoDate(checkIn);
+      return Math.round(ms / 86400000);
+    }
+
+    /** Returns the 10 digits after +63, or null if not a valid PH mobile. */
+    function normalizePhMobile(raw) {
+      let digits = raw.replace(/\D/g, "");
+      if (digits.startsWith("63")) digits = digits.slice(2);
+      if (digits.startsWith("0")) digits = digits.slice(1);
+      return /^9\d{9}$/.test(digits) ? digits : null;
+    }
+
+    function formatPhMobile(digits) {
+      return `+63 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+    }
+
+    function setError(fieldId, errId, message) {
+      document.getElementById(fieldId).classList.toggle("invalid", Boolean(message));
+      document.getElementById(errId).textContent = message || "";
+    }
+
+    function showStatus(message, ok) {
+      const el = document.getElementById("status");
+      el.innerHTML = message;
+      el.className = "status show " + (ok ? "ok" : "err");
+    }
+
+    // =====================================================================
+    // Form wiring
+    // =====================================================================
+    const form = document.getElementById("bookingForm");
+    const nameInput = document.getElementById("fullName");
+    const phoneInput = document.getElementById("phone");
+    const checkInInput = document.getElementById("checkIn");
+    const checkOutInput = document.getElementById("checkOut");
+    const notesInput = document.getElementById("notes");
+    const nightsInfo = document.getElementById("nightsInfo");
+    const submitBtn = document.getElementById("submitBtn");
+
+    const today = toIsoDate(new Date());
+    checkInInput.min = today;
+    checkOutInput.min = today;
+
+    // Auto-format phone as "9XX XXX XXXX" while typing.
+    phoneInput.addEventListener("input", () => {
+      let digits = phoneInput.value.replace(/\D/g, "");
+      if (digits.startsWith("63")) digits = digits.slice(2);
+      if (digits.startsWith("0")) digits = digits.slice(1);
+      digits = digits.slice(0, 10);
+      const parts = [digits.slice(0, 3), digits.slice(3, 6), digits.slice(6)].filter(Boolean);
+      phoneInput.value = parts.join(" ");
+    });
+
+    function updateDates() {
+      if (checkInInput.value) {
+        const next = parseIsoDate(checkInInput.value);
+        next.setDate(next.getDate() + 1);
+        checkOutInput.min = toIsoDate(next);
+        if (checkOutInput.value && checkOutInput.value <= checkInInput.value) {
+          checkOutInput.value = toIsoDate(next);
+        }
+      }
+      if (checkInInput.value && checkOutInput.value && checkOutInput.value > checkInInput.value) {
+        const n = nightsBetween(checkInInput.value, checkOutInput.value);
+        nightsInfo.textContent = `${n} night${n === 1 ? "" : "s"}`;
+      } else {
+        nightsInfo.textContent = "";
+      }
+    }
+    checkInInput.addEventListener("change", updateDates);
+    checkOutInput.addEventListener("change", updateDates);
+
+    function validate() {
+      let valid = true;
+
+      const name = nameInput.value.trim().replace(/\s+/g, " ");
+      if (!name) {
+        setError("field-name", "err-name", "Please enter your full name."); valid = false;
+      } else if (name.split(" ").length < 2 || !/^[\p{L}\s.'-]+$/u.test(name)) {
+        setError("field-name", "err-name", "Please enter your first and last name."); valid = false;
+      } else setError("field-name", "err-name", "");
+
+      const phone = normalizePhMobile(phoneInput.value);
+      if (!phone) {
+        setError("field-phone", "err-phone", "Enter a valid PH mobile number (e.g. 917 123 4567)."); valid = false;
+      } else setError("field-phone", "err-phone", "");
+
+      if (!checkInInput.value) {
+        setError("field-checkin", "err-checkin", "Select a check-in date."); valid = false;
+      } else if (checkInInput.value < today) {
+        setError("field-checkin", "err-checkin", "Date can't be in the past."); valid = false;
+      } else setError("field-checkin", "err-checkin", "");
+
+      if (!checkOutInput.value) {
+        setError("field-checkout", "err-checkout", "Select a check-out date."); valid = false;
+      } else if (checkInInput.value && checkOutInput.value <= checkInInput.value) {
+        setError("field-checkout", "err-checkout", "Must be after check-in."); valid = false;
+      } else setError("field-checkout", "err-checkout", "");
+
+      return valid ? {
+        fullName: name,
+        phone: formatPhMobile(phone),
+        checkIn: checkInInput.value,
+        checkOut: checkOutInput.value,
+        notes: notesInput.value.trim()
+      } : null;
+    }
+
+    /** Builds a pre-filled "Add to Google Calendar" link (all-day event). */
+    function buildGoogleCalendarTemplateUrl(booking, calendarId) {
+      const params = new URLSearchParams({
+        action: "TEMPLATE",
+        text: `Booking: ${booking.fullName}`,
+        dates: `${booking.checkIn.replace(/-/g, "")}/${booking.checkOut.replace(/-/g, "")}`,
+        details: `Name: ${booking.fullName}\nPhone: ${booking.phone}\nCheck-in: ${booking.checkIn}\nCheck-out: ${booking.checkOut}` +
+                 (booking.notes ? `\nNotes: ${booking.notes}` : ""),
+        add: calendarId,
+        ctz: CONFIG.timeZone
+      });
+      return "https://calendar.google.com/calendar/render?" + params.toString();
+    }
+
+    async function submitToAppsScript(booking, url) {
+      // text/plain avoids a CORS preflight, which Apps Script doesn't support.
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(booking)
+      });
+      return res.json();
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const booking = validate();
+      if (!booking) return;
+
+      if (!CONFIG.appsScriptUrl) {
+        window.open(buildGoogleCalendarTemplateUrl(booking, CONFIG.calendarId), "_blank", "noopener");
+        showStatus("A pre-filled Google Calendar event has opened in a new tab — click <b>Save</b> to confirm.", true);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Booking…";
+      try {
+        const result = await submitToAppsScript(booking, CONFIG.appsScriptUrl);
+        if (result.ok) {
+          showStatus(`Thanks, ${booking.fullName}! Your booking for ${booking.checkIn} → ${booking.checkOut} has been recorded.`, true);
+          form.reset();
+          nightsInfo.textContent = "";
+          refreshCalendar();
+        } else {
+          showStatus(result.error || "Sorry, those dates are unavailable.", false);
+        }
+      } catch (err) {
+        showStatus("Couldn't reach the booking service. Please try again.", false);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Request Booking";
+      }
+    });
+  </script>
 </body>
 </html>
